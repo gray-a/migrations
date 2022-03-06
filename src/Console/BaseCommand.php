@@ -3,72 +3,58 @@ declare(strict_types=1);
 
 namespace LaravelDoctrine\Migrations\Console;
 
+use Doctrine\Migrations\DependencyFactory;
 use Doctrine\Migrations\Tools\Console\Command\DoctrineCommand;
 use Illuminate\Console\Command;
-use LaravelDoctrine\Migrations\Configuration\DependencyFactoryProvider;
+use LaravelDoctrine\Migrations\CommandUtils;
 use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputInterface;
 
 abstract class BaseCommand extends Command
 {
 
+    protected function runDoctrineCommand(string $class, DependencyFactory $dependencyFactory): int
+    {
+        /** @var DoctrineCommand $command */
+        $command = new $class($dependencyFactory);
+        return $command->run($this->getDoctrineInput($command), $this->output->getOutput());
+    }
+
     /**
-     * @param InputInterface $input
-     * @param string[] $args
+     * @param DoctrineCommand $command
      * @return void
      */
     protected function getDoctrineInput(DoctrineCommand $command): ArrayInput
     {
         $definition = $this->getDefinition();
-        $inputArgs = [];
+        var_dump($definition);
+        $input = new ArrayInput([]);
+
 
         foreach ($definition->getArguments() as $argument) {
             $argName = $argument->getName();
 
-            if ($argName === 'command' || !$this->argumentExists($command, $argName)) {
+            if ($argName === 'command' || !CommandUtils::argumentExists($command, $argName)) {
                 continue;
             }
 
             if ($this->hasArgument($argName)) {
-                $inputArgs[$argName] = $this->argument($argName);
+                $input->setArgument($argName, $this->input->getArgument($argName));
             }
         }
 
         foreach ($definition->getOptions() as $option) {
             $optionName = $option->getName();
 
-            if ($optionName === 'connection' || !$this->optionExists($command, $optionName)) {
+            if ($optionName === 'connection' || !CommandUtils::optionExists($command, $optionName)) {
                 continue;
             }
 
             if ($this->input->hasOption($optionName)) {
-                $inputArgs['--' . $optionName] = $this->input->getOption($optionName);
+                $input->setOption($optionName, $this->input->getOption($optionName));
             }
         }
 
-        $input = new ArrayInput($inputArgs);
         $input->setInteractive(!($this->input->getOption("no-interaction") ?? false));
-
         return $input;
-    }
-
-    private function argumentExists(\Symfony\Component\Console\Command\Command $command, string $argName): bool
-    {
-        foreach ($command->getDefinition()->getArguments() as $arg) {
-            if ($arg->getName() === $argName) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private function optionExists(\Symfony\Component\Console\Command\Command $command, string $optionName): bool
-    {
-        foreach ($command->getDefinition()->getOptions() as $option) {
-            if ($option->getName() === $optionName) {
-                return true;
-            }
-        }
-        return false;
     }
 }

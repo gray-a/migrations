@@ -9,8 +9,6 @@ use LaravelDoctrine\Migrations\Configuration\DependencyFactoryProvider;
 
 class ExecuteCommand extends BaseCommand
 {
-    use ConfirmableTrait;
-
     /**
      * The name and signature of the console command.
      * @var string
@@ -37,8 +35,9 @@ class ExecuteCommand extends BaseCommand
     {
         $dependencyFactory = $provider->fromConnectionName($this->option('connection'));
 
-        $command = new \Doctrine\Migrations\Tools\Console\Command\ExecuteCommand($dependencyFactory);
-
-        return $command->run($this->getDoctrineInput($command), $this->output->getOutput());
+        return $this->runDoctrineCommand(
+            \Doctrine\Migrations\Tools\Console\Command\ExecuteCommand::class,
+            $dependencyFactory
+        );
     }
 }

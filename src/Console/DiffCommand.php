@@ -30,18 +30,17 @@ class DiffCommand extends BaseCommand
      */
     public function handle(
         DependencyFactoryProvider               $provider,
-        ConfigurationFactory                    $configurationFactory,
-        ManagerRegistry $registry
+        ConfigurationFactory                    $configurationFactory
     ): int {
-        $dependencyFactory = $provider->fromConnectionName($this->option('connection'));
-        $migrationConfig = $configurationFactory->getConfigAsRepository($this->option('connection'));
-
-        $command = new \Doctrine\Migrations\Tools\Console\Command\DiffCommand($dependencyFactory);
+        $dependencyFactory = $provider->fromConnectionName($this->input->getOption('connection'));
+        $migrationConfig = $configurationFactory->getConfigAsRepository($this->input->getOption('connection'));
 
         if ($this->input->getOption('filter-expression') === null) {
             $this->input->setOption('filter-expression', $migrationConfig->get('schema.filter'));
         }
-
-        return $command->run($this->getDoctrineInput($command), $this->output->getOutput());
+        return $this->runDoctrineCommand(
+            \Doctrine\Migrations\Tools\Console\Command\DiffCommand::class,
+            $dependencyFactory
+        );
     }
 }
